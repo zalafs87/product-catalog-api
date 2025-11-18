@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Product Catalog</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background:#f5f7fa }
+    h1 { margin-bottom: 6px }
+    button { padding:8px 12px; margin-right:8px; margin-bottom:12px }
+    .products { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-top:16px; }
+    .card { background:white; padding:12px; border-radius:6px; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+    .muted { color:#666; font-size:0.9rem }
+  </style>
+</head>
+<body>
+  <h1>Product Catalog</h1>
+  <p class="muted">Click the buttons to load products from the API</p>
+
+  <button id="loadBtn">Load All Products</button>
+  <button id="loadInstock">Load In-Stock</button>
+  <button id="loadCategories">Show Categories</button>
+
+  <div id="output"></div>
+  <div class="products" id="productContainer"></div>
+
+  <script>
+    const loadBtn = document.getElementById("loadBtn");
+    const loadInstock = document.getElementById("loadInstock");
+    const loadCategories = document.getElementById("loadCategories");
+    const productContainer = document.getElementById("productContainer");
+    const output = document.getElementById("output");
+
+    async function fetchJson(path) {
+      try {
+        const res = await fetch(path);
+        if (!res.ok) throw new Error('Network response was not ok: ' + res.status);
+        return await res.json();
+      } catch (err) {
+        output.innerHTML = '<p style="color:red">Error: ' + err.message + '</p>';
+        return null;
+      }
+    }
+
+    function showProducts(list) {
+      productContainer.innerHTML = "";
+      output.innerHTML = "";
+      if (!list || list.length === 0) {
+        output.innerHTML = "<p>No products to display.</p>";
+        return;
+      }
+      list.forEach(p => {
+        const el = document.createElement("div");
+        el.className = "card";
+        el.innerHTML = `
+          <h3>${p.name}</h3>
+          <p class="muted">Category: ${p.category}</p>
+          <p>Price: ₹${p.price}</p>
+          <p>In stock: ${p.inStock ? "Yes" : "No"}</p>
+        `;
+        productContainer.appendChild(el);
+      });
+    }
+
+    loadBtn.addEventListener("click", async () => {
+      const data = await fetchJson('/products');
+      showProducts(data);
+    });
+
+    loadInstock.addEventListener("click", async () => {
+      const data = await fetchJson('/products/instock');
+      showProducts(data);
+    });
+
+    loadCategories.addEventListener("click", async () => {
+      const data = await fetchJson('/products/categories');
+      if (!data) return;
+      productContainer.innerHTML = "";
+      output.innerHTML = "<h3>Categories</h3><ul>" + data.categories.map(c => `<li>${c}</li>`).join("") + "</ul>";
+    });
+  </script>
+</body>
+</html>
